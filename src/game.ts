@@ -1,6 +1,8 @@
 import Snake from './snake';
 import InputHandler from './input';
 import Food from './food';
+import GameOver from './gameover';
+import Highscores from './highscores';
 
 export default class Game {
   width: number;
@@ -16,27 +18,40 @@ export default class Game {
   lastTimeStamp: number;
   speed: number;
   score: number;
-
+  running: boolean;
   headerHeight: number;
   borderThickness: number;
+  gameOver: GameOver;
+  highscores: Highscores;
+  apiUrl: string | null;
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, apiUrl: string | null) {
     this.width = width;
     this.height = height;
     this.food = new Food(this);
     this.input = new InputHandler();
     this.cellWidth = 12;
     this.cellHeight = 12;
-    this.headerHeight = 70;
     this.borderThickness = 10;
-    this.horizontalCellCount = (width - 2*this.borderThickness) / this.cellWidth;
-    this.verticalCellCount = (height - this.headerHeight - 2*this.borderThickness) / this.cellHeight;
+    this.headerHeight = this.borderThickness + 30;
+    this.horizontalCellCount = Math.round(
+      (width - 2 * this.borderThickness) / this.cellWidth
+    );
+    this.verticalCellCount = Math.round(
+      (height - this.headerHeight - 2 * this.borderThickness) / this.cellHeight
+    );
     this.lastTimeStamp = 0;
+    this.gameOver = new GameOver(this, this.input);
+    this.highscores = new Highscores(this);
+    this.apiUrl = apiUrl;
     this.setup();
   }
 
-  toPixelCoord(x: number, y: number): [x: number, y: number]{
-        return [this.cellWidth * x + this.borderThickness, this.cellHeight * y + this.headerHeight + this.borderThickness];
+  toPixelCoord(x: number, y: number): [x: number, y: number] {
+    return [
+      this.cellWidth * x + this.borderThickness,
+      this.cellHeight * y + this.headerHeight + this.borderThickness
+    ];
   }
 
   update(timestamp: number) {
@@ -45,6 +60,10 @@ export default class Game {
       return;
     }
     this.lastTimeStamp = timestamp;
+
+    if (!this.running) {
+      return;
+    }
 
     // Update snakes position / direction
     this.snake.update(this.input.getDirection());
@@ -58,21 +77,26 @@ export default class Game {
     }
 
     if (this.snake.next?.Collides(this.snake.x, this.snake.y)) {
-      this.gameOver('Snake eat itself');
+      this.endGame('Snake eat itself');
     } else if (this.snake.x < 0) {
-      this.gameOver('Snake hit west wall');
+      this.endGame('Snake hit west wall');
     } else if (this.snake.x >= this.horizontalCellCount) {
-      this.gameOver('Snake hit east wall');
-    }else if (this.snake.y < 0) {
-      this.gameOver('Snake hit north wall');
-    }else if (this.snake.y >= this.verticalCellCount) {
-      this.gameOver('Snake hit south wall');
+      this.endGame('Snake hit east wall');
+    } else if (this.snake.y < 0) {
+      this.endGame('Snake hit north wall');
+    } else if (this.snake.y >= this.verticalCellCount) {
+      this.endGame('Snake hit south wall');
     }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     // Draw game rect
-    ctx.strokeRect(this.borderThickness, this.borderThickness + this.headerHeight, this.width - 2*this.borderThickness, this.height - this.headerHeight - 2*this.borderThickness);
+    ctx.strokeRect(
+      this.borderThickness,
+      this.borderThickness + this.headerHeight,
+      this.width - 2 * this.borderThickness,
+      this.height - this.headerHeight - 2 * this.borderThickness
+    );
 
     // Draw header seperator
     ctx.beginPath();
@@ -80,31 +104,58 @@ export default class Game {
     ctx.lineTo(this.width - this.borderThickness + 2, this.headerHeight);
     ctx.stroke();
 
-    this.food.draw(ctx);
-    this.snake.draw(ctx);
-    ctx.font = '48px pixel';
-    ctx.fillStyle = 'black';
-    ctx.textBaseline = 'top';
-    ctx.fillText(String(this.score).padStart(4, '0').toString(), this.borderThickness, this.borderThickness);
+    if (this.running) {
+      this.food.draw(ctx);
+      this.snake.draw(ctx);
+    }
+
+    this.drawHeader(ctx);
+    if (!this.running) {
+      if (this.apiUrl == null) {
+        this.setup();
+        return;
+      } else if (!this.gameOver.submitted) {
+        this.gameOver.draw(ctx);
+      } else {
+        this.highscores.draw(ctx);
+      }
+    }
   }
 
-  gameOver(reason: String) {
+  drawHeader(ctx: CanvasRenderingContext2D) {
+    ctx.font = '30px pixel';
+    ctx.fillStyle = 'black';
+    ctx.textBaseline = 'top';
+    var headerText = String(this.score).padStart(4, '0').toString();
+    if (!this.running) {
+      headerText += ' Game Over';
+    }
+    ctx.fillText(headerText, this.borderThickness, this.borderThickness);
+  }
+
+  drawCenteredText(ctx: CanvasRenderingContext2D, text: string, yPos: number) {
+    ctx.fillText(text, (this.width - ctx.measureText(text).width) / 2, yPos);
+  }
+
+  endGame(reason: String) {
     console.log(`Game over!`);
     console.log(`------------------`);
     console.log(reason);
     console.log(`Score: ${this.score}`);
     console.log(`------------------`);
-    // Reset
-    this.setup();
+
+    this.running = false;
   }
 
   setup() {
+    console.log('setup game');
     this.score = 0;
     this.speed = 150;
-    var x = Math.floor(Math.random() * (this.horizontalCellCount - 1));
-    var y = Math.floor(Math.random() * (this.verticalCellCount - 1));
+    var x = this.horizontalCellCount / 2;
+    var y = this.verticalCellCount / 2;
     this.snake = new Snake(this, null, 0, x, y, this.input.getDirection());
     this.snake.grow();
     this.food.move();
+    this.running = true;
   }
 }

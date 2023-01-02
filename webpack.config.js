@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.ts',
+  entry: './src/retrosnake.ts',
   module: {
     rules: [
       {
@@ -17,6 +17,12 @@ module.exports = {
   output: {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
+    publicPath:'/dist/',
+    library: 'RetroSnake',
+    libraryTarget:'umd', 
+    umdNamedDefine: true,
+    libraryExport: 'default' 
+    
   },
   devServer: {
     static: path.join(__dirname, "dist"),

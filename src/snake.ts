@@ -40,7 +40,7 @@ export default class SnakeComponent {
   drawHead(ctx: CanvasRenderingContext2D) {
     // Head
     var [nextX, nextY] = this.nextPosition();
-    var [x, y] = this.game.toPixelCoord(nextX, nextY)
+    var [x, y] = this.game.toPixelCoord(nextX, nextY);
 
     switch (this.direction) {
       case Direction.Up:
@@ -99,8 +99,7 @@ export default class SnakeComponent {
   }
 
   drawBody(ctx: CanvasRenderingContext2D) {
-
-    var [x, y] = this.game.toPixelCoord(this.x, this.y)
+    var [x, y] = this.game.toPixelCoord(this.x, this.y);
 
     if (this.index % 2 == 0) {
       // If even draw full body segment
@@ -144,7 +143,7 @@ export default class SnakeComponent {
   drawTail(ctx: CanvasRenderingContext2D) {
     var [nextX, nextY] = this.nextPositionReverse();
 
-    var [x, y] = this.game.toPixelCoord(nextX, nextY)
+    var [x, y] = this.game.toPixelCoord(nextX, nextY);
 
     switch (this.direction) {
       case Direction.Up:

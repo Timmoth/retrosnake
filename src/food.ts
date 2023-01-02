@@ -11,7 +11,13 @@ export default class Food {
 
   move() {
     this.moveToRandomPosition();
-    while (this.x != this.game.snake.x && this.y != this.game.snake.y) {
+
+    while (
+      Math.abs(this.x - this.game.snake.x) +
+        Math.abs(this.y - this.game.snake.y) <
+        10 &&
+      !this.game.snake.Collides(this.game.snake.x, this.game.snake.y)
+    ) {
       // move to random position until we find a valid place where the snakes body isn't
       this.moveToRandomPosition();
     }

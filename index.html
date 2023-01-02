@@ -11,6 +11,12 @@
     <div class="canvas-container">
         <canvas id="canvas1"></canvas>
     </div>
-<script type="module" src="dist/bundle.js"></script>
+    <script src="dist/bundle.js"></script>
+    <script>
+        window.onload = function () {
+            var r = new RetroSnake();
+            r.Start();
+        }
+    </script>
 </body>
 </html>
